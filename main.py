@@ -1,6 +1,6 @@
 from requests import request
-from datetime import date
-from ics import Calendar, Event, Organizer
+from datetime import date, datetime, timedelta
+from ics import Calendar, Event, Organizer, DisplayAlarm
 
 start = date(date.today().year, 1, 1).strftime("%Y-%m-%dT%H:%M:%S")
 end = date(date.today().year+10, 12, 31).strftime("%Y-%m-%dT%H:%M:%S")
@@ -27,15 +27,23 @@ cal = Calendar()
 
 # Create events
 for event in events:
+    offset = 0
     e = Event()
     e.uid = event['uniqueid']
     e.name = event['activitydesc']
-    e.begin = event['start']
-    e.end = event['end']
+    start = datetime.strptime(event['start'], "%Y-%m-%dT%H:%M")
+    if start < datetime(2023, 10, 29):
+      offset = 1
+    end = datetime.strptime(event['end'], "%Y-%m-%dT%H:%M")
+    start = start - timedelta(hours=offset)
+    end = end - timedelta(hours=offset)
+    e.begin = start
+    e.end = end
     e.location = event['locationdesc']
     if len(event['staffs']) > 0:
       lecturer = Organizer(email=event['staffs'][0]['Email'], common_name=event['staffs'][0]['FullName'])
       e.organizer = lecturer
+    # e.alarms = [DisplayAlarm(trigger=timedelta(hours=-1))]
     cal.events.add(e)
 
 # Write to ICS file
